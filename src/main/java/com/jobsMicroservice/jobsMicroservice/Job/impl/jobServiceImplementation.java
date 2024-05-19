@@ -3,10 +3,15 @@ package com.jobsMicroservice.jobsMicroservice.Job.impl;
 import com.jobsMicroservice.jobsMicroservice.Job.Job;
 import com.jobsMicroservice.jobsMicroservice.Job.JobRepository;
 import com.jobsMicroservice.jobsMicroservice.Job.JobService;
+import com.jobsMicroservice.jobsMicroservice.Job.dto.JobWithCompanyDTO;
+import com.jobsMicroservice.jobsMicroservice.Job.external.Company;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class jobServiceImplementation implements JobService {
@@ -21,8 +26,24 @@ public class jobServiceImplementation implements JobService {
     private Long nextId = 1L;
 
     @Override
-    public List<Job> findAll() {
-        return jobRepository.findAll();
+    public List<JobWithCompanyDTO> findAll() {
+        List<Job> jobs = jobRepository.findAll();
+        List<JobWithCompanyDTO> jobWithCompanyDTOS = new ArrayList<>();
+
+
+        return jobs.stream().map(this::convertToDTO).collect(Collectors.toList());
+//        return jobRepository.findAll();
+    }
+
+    private JobWithCompanyDTO convertToDTO(Job job){
+
+        RestTemplate restTemplate = new RestTemplate();
+            JobWithCompanyDTO jobWithCompanyDTO =  new JobWithCompanyDTO();
+            jobWithCompanyDTO.setJob(job);
+            Company company =  restTemplate.getForObject("http://localhost:8081/companies/"+ job.getCompanyId(), Company.class);
+
+            jobWithCompanyDTO.setCompany(company);
+            return  jobWithCompanyDTO;
     }
 
     @Override
